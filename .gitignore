@@ -1,0 +1,22 @@
+# Ambiente Virtual
+venv/
+.venv/
+env/
+.env
+
+# Arquivos de cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos de cache e relatórios do Pytest
+.pytest_cache/
+.coverage
+
+# Arquivos do editor (ex: VSCode)
+.vscode/
+
+# Arquivos de sistema (ex: Mac, Windows)
+.DS_Store
+Thumbs.db
