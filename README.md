@@ -200,37 +200,88 @@ As screenshots são automaticamente capturadas quando um teste falha e salvas na
 
 ## 🚀 CI/CD Integration
 
-Exemplo de configuração para GitHub Actions:
+### Problemas Comuns e Soluções
+
+#### ❌ **Se os testes estão falhando no GitHub Actions:**
+
+1. **Verificar dependências**: Certifique-se que todas as dependências estão no `requirements.txt`
+2. **Verificar versões Python**: Use versões compatíveis (3.9, 3.10, 3.11)
+3. **Verificar WebDriver**: O WebDriver Manager deve baixar automaticamente o driver
+
+#### 🔧 **Teste local antes do CI:**
+
+**Windows (PowerShell):**
+
+```powershell
+.\test-local.ps1
+```
+
+**Linux/macOS:**
+
+```bash
+chmod +x test-local.sh
+./test-local.sh
+```
+
+### Configuração GitHub Actions
+
+O projeto inclui dois workflows de CI/CD:
+
+1. **`ci.yml`** - Configuração completa com múltiplas versões Python
+2. **`simple-ci.yml`** - Configuração simplificada e mais estável
+
+**Para usar a configuração simples (recomendado):**
+
+- Renomeie `simple-ci.yml` para `ci.yml`
+- Remove ou renomeie o `ci.yml` atual
+
+### Exemplo de configuração mínima:
 
 ```yaml
-name: E2E Tests
+name: Testes Selenium
+
 on: [push, pull_request]
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
       - name: Start Flask app
         run: |
           python app.py &
-          sleep 5
+          sleep 10
       - name: Run tests
         run: |
-          pytest -v --headless --browser=chrome
-      - name: Upload test reports
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: test-reports
-          path: reports/
+          pytest -v --browser=chrome --headless
 ```
+
+### Debugging CI/CD
+
+**Verificar logs do GitHub Actions:**
+
+1. Acesse a aba "Actions" no GitHub
+2. Clique no workflow que falhou
+3. Analise os logs de cada step
+4. Baixe os artifacts (screenshots, relatórios)
+
+**Erros comuns:**
+
+- **Chrome não encontrado**: Adicione instalação do Chrome no workflow
+- **Porta 5001 ocupada**: Use `pkill -f "python app.py"` antes de iniciar
+- **Timeout na aplicação**: Aumente o tempo de sleep ou adicione verificação com curl
+- **WebDriver não encontrado**: Verifique se webdriver-manager está instalado
 
 ## ✅ Casos de Teste Implementados
 

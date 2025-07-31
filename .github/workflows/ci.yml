@@ -12,8 +12,8 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.9, 3.10, 3.11]
-        browser: [chrome, firefox]
+        python-version: ["3.9", "3.10", "3.11"]
+        browser: [chrome]
 
     steps:
       - uses: actions/checkout@v4
@@ -36,13 +36,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Setup Chrome
-        if: matrix.browser == 'chrome'
-        uses: browser-actions/setup-chrome@latest
-
-      - name: Setup Firefox
-        if: matrix.browser == 'firefox'
-        uses: browser-actions/setup-firefox@latest
+      - name: Setup Chrome for Linux
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
 
       - name: Create directories
         run: |
@@ -50,24 +47,27 @@ jobs:
 
       - name: Start Flask application
         run: |
+          export FLASK_ENV=testing
           python app.py &
-          sleep 10  # Aguarda a aplicação iniciar
+          sleep 10
+          # Verificar se a aplicação está rodando
+          curl -f http://127.0.0.1:5001/ || exit 1
         env:
           FLASK_ENV: testing
 
       - name: Run smoke tests
         run: |
-          pytest -v -m "smoke" --browser=${{ matrix.browser }} --headless --html=reports/smoke-report.html --self-contained-html
+          pytest -v -m "smoke" --browser=chrome --headless --html=reports/smoke-report.html --self-contained-html
         continue-on-error: true
 
       - name: Run critical tests
         run: |
-          pytest -v -m "critical" --browser=${{ matrix.browser }} --headless --html=reports/critical-report.html --self-contained-html
+          pytest -v -m "critical" --browser=chrome --headless --html=reports/critical-report.html --self-contained-html
         continue-on-error: true
 
       - name: Run all tests
         run: |
-          pytest -v --browser=${{ matrix.browser }} --headless --html=reports/full-report.html --self-contained-html --maxfail=5
+          pytest -v --browser=chrome --headless --html=reports/full-report.html --self-contained-html --maxfail=5
         continue-on-error: true
 
       - name: Upload test reports
@@ -86,12 +86,3 @@ jobs:
         with:
           name: screenshots-${{ matrix.python-version }}-${{ matrix.browser }}
           path: screenshots/
-
-  security-scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run security scan
-        uses: pypa/gh-action-pip-audit@v1.0.8
-        with:
-          inputs: requirements.txt

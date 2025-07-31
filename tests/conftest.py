@@ -68,13 +68,27 @@ def _create_chrome_driver(headless: bool = False):
     if headless:
         options.add_argument("--headless")
     
+    # Opções essenciais para CI/CD
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-web-security")
+    options.add_argument("--allow-running-insecure-content")
+    options.add_argument("--ignore-certificate-errors")
     
-    service = ChromeService(ChromeDriverManager().install())
-    return webdriver.Chrome(service=service, options=options)
+    try:
+        service = ChromeService(ChromeDriverManager().install())
+        return webdriver.Chrome(service=service, options=options)
+    except Exception as e:
+        print(f"Erro ao criar Chrome driver: {e}")
+        # Fallback: tentar usar Chrome do sistema
+        try:
+            return webdriver.Chrome(options=options)
+        except Exception as e2:
+            print(f"Erro no fallback Chrome: {e2}")
+            raise
 
 def _create_firefox_driver(headless: bool = False):
     """Cria uma instância do Firefox WebDriver"""
