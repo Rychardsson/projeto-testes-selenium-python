@@ -174,6 +174,7 @@ O projeto implementa o padrão Page Object Model para melhor organização:
 ## 🎯 Data Factory
 
 Geração dinâmica de dados de teste para:
+
 - Nomes aleatórios
 - Emails válidos
 - Dados inválidos para testes de erro
@@ -182,16 +183,19 @@ Geração dinâmica de dados de teste para:
 ## 🔍 Debugging e Troubleshooting
 
 ### Para debug detalhado:
+
 ```powershell
 pytest -v -s --capture=no
 ```
 
 ### Para ver logs em tempo real:
+
 ```powershell
 pytest -v --log-cli-level=INFO
 ```
 
 ### Screenshots automáticos em falhas:
+
 As screenshots são automaticamente capturadas quando um teste falha e salvas na pasta `screenshots/` com timestamp.
 
 ## 🚀 CI/CD Integration
@@ -209,7 +213,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
@@ -231,18 +235,21 @@ jobs:
 ## ✅ Casos de Teste Implementados
 
 ### Testes de Navegação (`test_navigation.py`)
+
 - `test_navigate_to_home_page`: Verifica se a página inicial carrega corretamente
 - `test_navigate_from_home_to_form`: Valida a navegação da página inicial para a de formulário
 - `test_direct_form_page_access`: Testa o acesso direto à página do formulário
 - `test_page_titles`: Verifica se os títulos das páginas estão corretos
 
 ### Testes de Formulários (`test_forms.py`)
+
 - `test_successful_form_submission`: Testa o preenchimento e envio bem-sucedido do formulário
 - `test_form_submission_with_individual_fields`: Testa preenchimento individual dos campos
 - `test_multiple_valid_submissions`: Testa múltiplas submissões válidas com dados diferentes
 - `test_form_field_clearing`: Testa se os campos podem ser limpos e preenchidos novamente
 
 ### Testes de Validação e Erros (`test_errors.py`)
+
 - `test_empty_name_field_error`: Testa erro quando o campo nome está vazio
 - `test_empty_email_field_error`: Testa erro quando o campo email está vazio
 - `test_both_fields_empty_error`: Testa erro quando ambos os campos estão vazios

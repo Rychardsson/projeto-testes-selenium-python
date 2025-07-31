@@ -1,0 +1,97 @@
+name: Testes End-to-End
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+        browser: [chrome, firefox]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Setup Chrome
+        if: matrix.browser == 'chrome'
+        uses: browser-actions/setup-chrome@latest
+
+      - name: Setup Firefox
+        if: matrix.browser == 'firefox'
+        uses: browser-actions/setup-firefox@latest
+
+      - name: Create directories
+        run: |
+          mkdir -p reports screenshots logs
+
+      - name: Start Flask application
+        run: |
+          python app.py &
+          sleep 10  # Aguarda a aplicação iniciar
+        env:
+          FLASK_ENV: testing
+
+      - name: Run smoke tests
+        run: |
+          pytest -v -m "smoke" --browser=${{ matrix.browser }} --headless --html=reports/smoke-report.html --self-contained-html
+        continue-on-error: true
+
+      - name: Run critical tests
+        run: |
+          pytest -v -m "critical" --browser=${{ matrix.browser }} --headless --html=reports/critical-report.html --self-contained-html
+        continue-on-error: true
+
+      - name: Run all tests
+        run: |
+          pytest -v --browser=${{ matrix.browser }} --headless --html=reports/full-report.html --self-contained-html --maxfail=5
+        continue-on-error: true
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-reports-${{ matrix.python-version }}-${{ matrix.browser }}
+          path: |
+            reports/
+            screenshots/
+            logs/
+
+      - name: Upload screenshots on failure
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: screenshots-${{ matrix.python-version }}-${{ matrix.browser }}
+          path: screenshots/
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run security scan
+        uses: pypa/gh-action-pip-audit@v1.0.8
+        with:
+          inputs: requirements.txt
