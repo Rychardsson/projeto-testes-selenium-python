@@ -9,14 +9,39 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py[cod]
+*$py.class
 
 # Arquivos de cache e relatórios do Pytest
 .pytest_cache/
 .coverage
+*.cover
+htmlcov/
+.tox/
+.nox/
 
-# Arquivos do editor (ex: VSCode)
+# Relatórios de teste e screenshots
+reports/*.html
+reports/*.json
+screenshots/*.png
+logs/*.log
+
+# Arquivos do editor (ex: VSCode, PyCharm)
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # Arquivos de sistema (ex: Mac, Windows)
 .DS_Store
 Thumbs.db
+ehthumbs.db
+.Spotlight-V100
+.Trashes
+
+# Arquivos de distribuição
+build/
+dist/
+*.egg-info/
+.eggs/
