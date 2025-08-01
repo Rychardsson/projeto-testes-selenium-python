@@ -1,4 +1,4 @@
-name: Testes End-to-End
+name: 🚀 Testes Selenium - E2E
 
 on:
   push:
@@ -9,16 +9,18 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # Timeout para evitar execuções longas
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
 
-      - name: Setup Python 3.11
+      - name: 🐍 Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Cache pip dependencies
+      - name: 📦 Cache dependências pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
@@ -26,87 +28,125 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install dependencies
+      - name: 📦 Instalar dependências Python
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          # Mostrar informações do Python
-          python --version
-          pip --version
-          # Instalar dependências básicas primeiro
+          echo "🐍 Python: $(python --version)"
+          echo "📦 pip: $(pip --version)"
+
+          # Instalar dependências essenciais
           pip install Flask selenium pytest webdriver-manager pytest-html
-          # Verificar instalação
+
+          echo "✅ Verificando instalações:"
           python -c "import selenium; print(f'Selenium: {selenium.__version__}')"
           python -c "import flask; print(f'Flask: {flask.__version__}')"
           python -c "import pytest; print(f'Pytest: {pytest.__version__}')"
 
-      - name: Setup Chrome for Linux
+      - name: 🌐 Setup Chrome e dependências do sistema
         run: |
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable xvfb
-          # Verificar instalação
-          google-chrome --version
+          sudo apt-get update -qq
+          sudo apt-get install -y google-chrome-stable xvfb curl
+          echo "🌐 Chrome: $(google-chrome --version)"
 
-      - name: Create directories
+      - name: 📁 Criar diretórios necessários
         run: |
           mkdir -p reports screenshots logs
+          echo "📁 Diretórios criados: reports, screenshots, logs"
 
-      - name: Start Flask application
+      - name: 🚀 Iniciar aplicação Flask
         run: |
+          echo "🚀 Iniciando aplicação Flask..."
           export FLASK_ENV=testing
-          # Matar qualquer processo Flask anterior
+
+          # Limpar processos Flask anteriores
           pkill -f "python app.py" || true
-          # Iniciar aplicação
+          sleep 2
+
+          # Iniciar aplicação em background
           python app.py &
-          sleep 15
-          # Verificar se a aplicação está rodando
-          for i in {1..5}; do
-            if curl -f http://127.0.0.1:5001/; then
-              echo "✅ Aplicação Flask está respondendo"
+          FLASK_PID=$!
+          echo "Flask PID: $FLASK_PID"
+
+          # Aguardar inicialização com retry
+          echo "⏳ Aguardando Flask inicializar..."
+          for i in {1..6}; do
+            sleep 5
+            if curl -s -f http://127.0.0.1:5001/ > /dev/null; then
+              echo "✅ Flask respondendo na tentativa $i"
               break
             else
-              echo "⏳ Tentativa $i: Aguardando aplicação..."
-              sleep 5
+              echo "⏳ Tentativa $i/6: Aguardando..."
             fi
           done
+
           # Verificação final
-          curl -f http://127.0.0.1:5001/ || (echo "❌ Aplicação Flask falhou ao iniciar" && exit 1)
+          if curl -s -f http://127.0.0.1:5001/; then
+            echo "✅ Aplicação Flask está pronta!"
+          else
+            echo "❌ Flask falhou ao iniciar"
+            exit 1
+          fi
         env:
           FLASK_ENV: testing
 
-      - name: Run smoke tests
+      - name: 🧪 Executar testes smoke (rápidos)
         run: |
-          pytest -v -m "smoke" --browser=chrome --headless --html=reports/smoke-report.html --self-contained-html
+          echo "🧪 Executando testes smoke..."
+          pytest -v -m "smoke" --browser=chrome --headless \
+            --html=reports/smoke-report.html --self-contained-html \
+            --tb=short --quiet
         env:
           DISPLAY: :99
         continue-on-error: true
 
-      - name: Run critical tests
+      - name: 🎯 Executar testes críticos
         run: |
-          pytest -v -m "critical" --browser=chrome --headless --html=reports/critical-report.html --self-contained-html
+          echo "🎯 Executando testes críticos..."
+          pytest -v -m "critical" --browser=chrome --headless \
+            --html=reports/critical-report.html --self-contained-html \
+            --tb=short --quiet
         env:
           DISPLAY: :99
         continue-on-error: true
 
-      - name: Run all tests
+      - name: 🚀 Executar todos os testes
         run: |
-          pytest -v --browser=chrome --headless --html=reports/full-report.html --self-contained-html --maxfail=5
+          echo "🚀 Executando bateria completa de testes..."
+          pytest -v --browser=chrome --headless \
+            --html=reports/full-report.html --self-contained-html \
+            --maxfail=5 --tb=short
         env:
           DISPLAY: :99
         continue-on-error: true
 
-      - name: Upload test reports
+      - name: 📊 Upload relatórios de teste
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-reports
+          name: test-reports-${{ github.run_number }}
           path: |
             reports/
             screenshots/
             logs/
+          retention-days: 30
 
-      - name: Upload screenshots on failure
+      - name: 📸 Upload screenshots de falhas
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: failure-screenshots
+          name: failure-screenshots-${{ github.run_number }}
           path: screenshots/
+          retention-days: 7
+
+      - name: 📋 Resumo dos resultados
+        if: always()
+        run: |
+          echo "📋 RESUMO DOS TESTES:"
+          echo "===================="
+          if [ -d "reports" ]; then
+            echo "📊 Relatórios gerados: $(ls reports/*.html 2>/dev/null | wc -l)"
+          fi
+          if [ -d "screenshots" ]; then
+            echo "📸 Screenshots: $(ls screenshots/*.png 2>/dev/null | wc -l)"
+          fi
+          echo "✅ Workflow finalizado com sucesso!"
