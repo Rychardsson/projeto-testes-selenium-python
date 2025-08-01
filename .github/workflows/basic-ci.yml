@@ -1,0 +1,55 @@
+name: Testes Básicos
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable xvfb
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create directories
+        run: |
+          mkdir -p reports screenshots logs
+
+      - name: Start Flask app
+        run: |
+          python app.py &
+          sleep 15
+          curl -f http://127.0.0.1:5001/ || exit 1
+
+      - name: Run tests
+        run: |
+          pytest tests/test_navigation.py -v --browser=chrome --headless --html=reports/test-report.html --self-contained-html
+        env:
+          DISPLAY: :99
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            reports/
+            screenshots/

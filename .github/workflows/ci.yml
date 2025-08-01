@@ -19,12 +19,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Cache pip dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -39,7 +39,9 @@ jobs:
       - name: Setup Chrome for Linux
         run: |
           sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+          sudo apt-get install -y google-chrome-stable xvfb
+          # Verificar instalação
+          google-chrome --version
 
       - name: Create directories
         run: |
@@ -48,30 +50,49 @@ jobs:
       - name: Start Flask application
         run: |
           export FLASK_ENV=testing
+          # Matar qualquer processo Flask anterior
+          pkill -f "python app.py" || true
+          # Iniciar aplicação
           python app.py &
-          sleep 10
+          sleep 15
           # Verificar se a aplicação está rodando
-          curl -f http://127.0.0.1:5001/ || exit 1
+          for i in {1..5}; do
+            if curl -f http://127.0.0.1:5001/; then
+              echo "✅ Aplicação Flask está respondendo"
+              break
+            else
+              echo "⏳ Tentativa $i: Aguardando aplicação..."
+              sleep 5
+            fi
+          done
+          # Verificação final
+          curl -f http://127.0.0.1:5001/ || (echo "❌ Aplicação Flask falhou ao iniciar" && exit 1)
         env:
           FLASK_ENV: testing
 
       - name: Run smoke tests
         run: |
           pytest -v -m "smoke" --browser=chrome --headless --html=reports/smoke-report.html --self-contained-html
+        env:
+          DISPLAY: :99
         continue-on-error: true
 
       - name: Run critical tests
         run: |
           pytest -v -m "critical" --browser=chrome --headless --html=reports/critical-report.html --self-contained-html
+        env:
+          DISPLAY: :99
         continue-on-error: true
 
       - name: Run all tests
         run: |
           pytest -v --browser=chrome --headless --html=reports/full-report.html --self-contained-html --maxfail=5
+        env:
+          DISPLAY: :99
         continue-on-error: true
 
       - name: Upload test reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-reports-${{ matrix.python-version }}-${{ matrix.browser }}
@@ -81,7 +102,7 @@ jobs:
             logs/
 
       - name: Upload screenshots on failure
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: screenshots-${{ matrix.python-version }}-${{ matrix.browser }}

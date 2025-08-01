@@ -269,6 +269,20 @@ jobs:
 
 ### Debugging CI/CD
 
+**⚠️ VERSÕES ATUALIZADAS - Problema do `upload-artifact` v3 CORRIGIDO!**
+
+O projeto agora usa as versões mais recentes das GitHub Actions:
+
+- `actions/upload-artifact@v4` (ao invés da v3 depreciada)
+- `actions/setup-python@v5`
+- `actions/cache@v4`
+
+**Workflows disponíveis:**
+
+1. **`ci.yml`** - Workflow completo com matriz de testes
+2. **`simple-ci.yml`** - Workflow simplificado
+3. **`basic-ci.yml`** - Workflow mínimo (apenas navegação)
+
 **Verificar logs do GitHub Actions:**
 
 1. Acesse a aba "Actions" no GitHub
@@ -276,12 +290,20 @@ jobs:
 3. Analise os logs de cada step
 4. Baixe os artifacts (screenshots, relatórios)
 
-**Erros comuns:**
+**Erros comuns CORRIGIDOS:**
 
-- **Chrome não encontrado**: Adicione instalação do Chrome no workflow
-- **Porta 5001 ocupada**: Use `pkill -f "python app.py"` antes de iniciar
-- **Timeout na aplicação**: Aumente o tempo de sleep ou adicione verificação com curl
-- **WebDriver não encontrado**: Verifique se webdriver-manager está instalado
+- ✅ **Actions depreciadas**: Todas atualizadas para versões mais recentes
+- ✅ **Chrome não encontrado**: Instalação robusta com verificação
+- ✅ **Timeout na aplicação**: Verificação em loop com retry
+- ✅ **Display virtual**: Configuração DISPLAY para headless
+- ✅ **WebDriver**: Fallback e tratamento de erros melhorado
+
+**Se ainda houver problemas, use o workflow básico:**
+
+```bash
+# Renomear para usar o workflow mais simples
+mv .github/workflows/basic-ci.yml .github/workflows/ci.yml
+```
 
 ## ✅ Casos de Teste Implementados
 
