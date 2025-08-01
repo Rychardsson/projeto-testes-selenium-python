@@ -7,8 +7,22 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
-from config.settings import config
 import datetime
+
+# Importar config de forma segura
+try:
+    from config.settings import config
+except ImportError:
+    # Fallback se config não estiver disponível
+    class FallbackConfig:
+        BASE_URL = "http://127.0.0.1:5001"
+        HEADLESS = False
+        TIMEOUT = 10
+        SCREENSHOT_ON_FAILURE = True
+        VALID_USER_DATA = {"name": "Test User", "email": "test@example.com"}
+        INVALID_USER_DATA = {"empty_name": {"name": "", "email": "test@email.com"}}
+    
+    config = FallbackConfig()
 
 def pytest_addoption(parser):
     """Adiciona opções de linha de comando customizadas"""

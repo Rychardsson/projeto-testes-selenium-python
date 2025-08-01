@@ -1,6 +1,12 @@
 from selenium.webdriver.common.by import By
 from pages.base_page import BasePage
-from config.settings import config
+
+# Importar config de forma segura
+try:
+    from config.settings import config
+    BASE_URL = config.BASE_URL
+except ImportError:
+    BASE_URL = "http://127.0.0.1:5001"
 
 class HomePage(BasePage):
     """Page Object para a página inicial"""
@@ -11,7 +17,7 @@ class HomePage(BasePage):
     
     def __init__(self, driver):
         super().__init__(driver)
-        self.url = config.BASE_URL + "/"
+        self.url = BASE_URL + "/"
     
     def navigate(self):
         """Navega para a página inicial"""

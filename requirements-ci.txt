@@ -1,0 +1,6 @@
+# Requirements mínimos para CI/CD
+Flask
+selenium
+pytest
+webdriver-manager
+pytest-html
